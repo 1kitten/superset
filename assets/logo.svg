@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="30" viewBox="0 0 130 30">
+  <rect x="0" y="4" width="22" height="22" rx="5" fill="#1FA8C9"/>
+  <circle cx="11" cy="15" r="6" fill="#FFFFFF"/>
+  <text x="30" y="21" font-family="Helvetica, Arial, sans-serif" font-size="16"
+        font-weight="700" fill="#20A7C9">Analytics</text>
+</svg>
