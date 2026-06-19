@@ -8,11 +8,63 @@
 
 import os
 
+from cachelib.redis import RedisCache
 from flask import redirect, request
 
 
 def env(key: str, default: str | None = None) -> str | None:
     return os.environ.get(key, default)
+
+
+# ---------------------------------------------------------------------------
+# Базовая инфраструктура (metadata DB, кэш, очереди) — production-ориентир.
+# ---------------------------------------------------------------------------
+SECRET_KEY = env("SUPERSET_SECRET_KEY", "CHANGE_ME_openssl_rand_base64_42")
+
+SQLALCHEMY_DATABASE_URI = (
+    f"postgresql+psycopg2://{env('DATABASE_USER', 'superset')}:"
+    f"{env('DATABASE_PASSWORD', 'superset')}@"
+    f"{env('DATABASE_HOST', 'db')}:{env('DATABASE_PORT', '5432')}/"
+    f"{env('DATABASE_DB', 'superset')}"
+)
+SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 300}
+
+# За reverse-proxy доверяем X-Forwarded-*.
+ENABLE_PROXY_FIX = True
+PREFERRED_URL_SCHEME = env("PREFERRED_URL_SCHEME", "http")
+WTF_CSRF_ENABLED = True
+WTF_CSRF_TIME_LIMIT = None
+
+REDIS_HOST = env("REDIS_HOST", "redis")
+REDIS_PORT = int(env("REDIS_PORT", "6379"))
+
+CACHE_CONFIG = {
+    "CACHE_TYPE": "RedisCache",
+    "CACHE_DEFAULT_TIMEOUT": 300,
+    "CACHE_KEY_PREFIX": "superset_",
+    "CACHE_REDIS_HOST": REDIS_HOST,
+    "CACHE_REDIS_PORT": REDIS_PORT,
+    "CACHE_REDIS_DB": 1,
+}
+DATA_CACHE_CONFIG = {**CACHE_CONFIG, "CACHE_REDIS_DB": 2, "CACHE_DEFAULT_TIMEOUT": 600}
+FILTER_STATE_CACHE_CONFIG = {**CACHE_CONFIG, "CACHE_REDIS_DB": 3}
+EXPLORE_FORM_DATA_CACHE_CONFIG = {**CACHE_CONFIG, "CACHE_REDIS_DB": 4}
+
+RESULTS_BACKEND = RedisCache(
+    host=REDIS_HOST, port=REDIS_PORT, db=5, key_prefix="superset_results"
+)
+RATELIMIT_STORAGE_URI = f"redis://{REDIS_HOST}:{REDIS_PORT}/6"
+
+
+class CeleryConfig:
+    broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    imports = ("superset.sql_lab", "superset.tasks.scheduler")
+    worker_prefetch_multiplier = 1
+    task_acks_late = True
+
+
+CELERY_CONFIG = CeleryConfig
 
 
 # ---------------------------------------------------------------------------
