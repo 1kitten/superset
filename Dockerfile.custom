@@ -21,4 +21,14 @@ COPY assets/favicon.svg /app/superset/static/assets/images/favicon.svg
 # PR #3: логотип
 COPY assets/logo.svg /app/superset/static/assets/images/logo.svg
 
+# PR #4: убрать надпись "Powered by Apache Superset" из меню Settings → About.
+# В superset/views/base.py флаг show_watermark вычисляется как
+#   "superset-logo-horiz" not in appbuilder.app_icon
+# Принудительно выставляем его в False — watermark не рендерится независимо
+# от логотипа. Не требует пересборки фронтенда.
+RUN sed -i \
+    's/"show_watermark": ("superset-logo-horiz" not in appbuilder.app_icon)/"show_watermark": False/' \
+    /app/superset/views/base.py && \
+    grep -q '"show_watermark": False' /app/superset/views/base.py
+
 USER superset
