@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+#
+# Кастомный production-образ Apache Superset 6.1.0.
+# Базируется на официальном образе того же тега и доустанавливает зависимости/ассеты.
+#
+#   PR #1 — clickhouse-connect (docker/requirements-local.txt)
+#
+# Сборка:  docker build -f Dockerfile.custom -t custom-superset:6.1.0 .
+
+FROM apache/superset:6.1.0
+
+USER root
+
+# PR #1: дополнительные python-пакеты (clickhouse-connect и т.п.)
+COPY docker/requirements-local.txt /app/docker/requirements-local.txt
+RUN pip install --no-cache-dir -r /app/docker/requirements-local.txt
+
+USER superset
