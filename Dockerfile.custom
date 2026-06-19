@@ -15,4 +15,7 @@ USER root
 COPY docker/requirements-local.txt /app/docker/requirements-local.txt
 RUN pip install --no-cache-dir -r /app/docker/requirements-local.txt
 
+# PR #2: favicon
+COPY assets/favicon.svg /app/superset/static/assets/images/favicon.svg
+
 USER superset
